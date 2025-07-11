@@ -1,21 +1,19 @@
 package ticTacToe.model;
 
 public class Player {
+    private final String name;
+    private final Symbol symbol;
 
-    public String name;
-    public PlayingPiece piece;
-
-    public Player(String name, PlayingPiece piece){
+    public Player(String name, Symbol symbol) {
         this.name = name;
-        this.piece = piece;
+        this.symbol = symbol;
     }
 
-    public String getName() { return name; }
+    public String getName() {
+        return name;
+    }
 
-    public void setName(String name) {  this.name= name; }
-
-    public PlayingPiece getPiece() { return piece; }
-
-    public void setPiece (PlayingPiece piece) { this.piece = piece; }
-
+    public Symbol getSymbol() {
+        return symbol;
+    }
 }

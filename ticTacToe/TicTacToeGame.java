@@ -1,85 +1,67 @@
 package ticTacToe;
 
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.Scanner;
+import java.util.List;
 
+import ticTacToe.WinningStrategy.ColumnWinningStrategy;
+import ticTacToe.WinningStrategy.DiagonalWinningStrategy;
+import ticTacToe.WinningStrategy.RowWinningStrategy;
+import ticTacToe.WinningStrategy.WinningStrategy;
 import ticTacToe.model.Board;
+import ticTacToe.model.GameStatus;
 import ticTacToe.model.Player;
-import ticTacToe.model.PlayingPieceO;
-import ticTacToe.model.PlayingPieceX;
 
 public class TicTacToeGame {
 
+    private final Board board;
+    private final Player[] players;
+    private int curPlyerIndex = 0;
+    private GameStatus gameStatus;
 
-    // we have taken the deque because we have to remove the user and it in the back
-    Deque <Player> players;
-
-    Board gameBoard;
-
-    // we can take input and add multiple user
-    public TicTacToeGame(){
-        initializeGame();
+    public TicTacToeGame(Player p1, Player p2, int size) {
+        List<WinningStrategy> winningStrategies = List.of(new RowWinningStrategy(), new ColumnWinningStrategy(),
+                new DiagonalWinningStrategy());
+        this.board = new Board(size, winningStrategies);
+        this.players = new Player[] { p1, p2 };
+        this.gameStatus = GameStatus.IN_PROGRESS;
     }
 
-    public void initializeGame(){
-        players = new LinkedList<>();
-        
-        PlayingPieceX pieceX = new PlayingPieceX();
-        PlayingPieceO pieceO = new PlayingPieceO();
-
-        Player p1 = new Player("player 1", pieceX);
-        Player p2 = new Player("player 2", pieceO);
-
-        players.add(p1);
-        players.add(p2);
-
-        gameBoard = new Board(3);
-    }
-
-    public String startGame(){
-        boolean noWinner = true;
-        while (noWinner) {
-
-            // taking out first player for turn
-            Player currenPlayer = players.removeFirst();
-
-            gameBoard.printBoard();
-
-            // get free spaces
-
-            List<Pair<Integer,Integer>> freeSpaces = gameBoard.getFreeSpaces();
-
-            if(freeSpaces.isEmpty()){
-                noWinner = false;
-                continue;
-            }
-
-            // read the user input 
-
-            System.out.print("Player: " +currenPlayer.getName()+" Emter row,column :");
-            Scanner inputScanner = new Scanner(System.in);
-            String s = inputScanner.nextLine();
-            String[] values = s.split(",");
-            int row = Integer.valueOf(values[0]);
-            int column = Integer.valueOf(values[1]);
-
-            // placing piece
-            boolean pieceAdded = gameBoard.addPiece(row,column,currenPlayer.getPiece());
-            if(!pieceAdded){
-                // player can choose this cell nned to choose other cell;
-                System.out.println("Incorrect position try again");
-                players.addFirst(currenPlayer);
-                continue;
-            }
-            players.addLast(currenPlayer);
-            boolean winner = isThereWinner(row,column,currenPlayer.piece.type);
-
-            if(winner){
-                return currenPlayer.getName();
-            }
+    public synchronized boolean playMove(int row, int col) {
+        if (gameStatus != GameStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Game already finished.");
         }
-        return "Tie";
+
+        if (!board.isValidMove(row, col)) {
+            throw new IllegalStateException("Invalid Move");
+        }
+
+        Player curPlayer = players[curPlyerIndex];
+        board.placeMove(row, col, curPlayer.getSymbol());
+
+        if (board.checkWin(curPlayer.getSymbol())) {
+            gameStatus = GameStatus.WIN;
+            System.out.println(curPlayer.getName() + " wins!");
+        } else if (board.isFull()) {
+            gameStatus = GameStatus.DRAW;
+            System.out.println("Game ended in a draw.");
+        } else {
+            // how id this working 1-0 =0 and 1-1 =0 see it s roating always but it will
+            // work only for 2
+            curPlyerIndex = 1 - curPlyerIndex;
+        }
+        return true;
     }
-    
+
+    public synchronized void reset() {
+        board.reset();
+        gameStatus = GameStatus.IN_PROGRESS;
+        curPlyerIndex = 0;
+    }
+
+    public GameStatus getStatus() {
+        return gameStatus;
+    }
+
+    public void printBoard() {
+        board.print();
+    }
 }
